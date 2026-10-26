@@ -1,0 +1,223 @@
+{
+  "pullRequest": {
+    "owner": "udacity",
+    "repo": "cd14715-simple-todo-app",
+    "number": 2
+  },
+  "fileReviews": [
+    {
+      "file": "src/todo.ts",
+      "codeQuality": {
+        "file": "src/todo.ts",
+        "issues": [
+          {
+            "line": 119,
+            "severity": "critical",
+            "category": "security",
+            "description": "SQL injection vulnerability in searchTodos function. User input 'keyword' is directly interpolated into SQL query using template literals without parameterization or escaping.",
+            "suggestion": "Use parameterized queries with placeholder syntax: `SELECT * FROM todos WHERE title LIKE ? OR description LIKE ?` and pass parameters as array `['%' + keyword + '%', '%' + keyword + '%']`"
+          },
+          {
+            "line": 127,
+            "severity": "critical",
+            "category": "security",
+            "description": "SQL injection vulnerability in searchTodosByStatus function. User input 'completed' is concatenated directly into SQL query without validation or parameterization.",
+            "suggestion": "Use parameterized queries: `SELECT * FROM todos WHERE completed = ?` and pass the completed value as a parameter array instead of string concatenation."
+          },
+          {
+            "line": 136,
+            "severity": "critical",
+            "category": "security",
+            "description": "SQL injection vulnerability in getTodosByUser function. User input 'userId' is directly interpolated into SQL query using template literals without parameterization or sanitization.",
+            "suggestion": "Use parameterized queries: `SELECT t.* FROM todos t JOIN user_todos ut ON t.id = ut.todo_id WHERE ut.user_id = ?` and pass userId as a parameter."
+          }
+        ],
+        "overallScore": 15,
+        "summary": "Three critical SQL injection vulnerabilities identified across new search functions. All three functions use direct string interpolation/concatenation with user input in SQL queries, bypassing protection against SQL injection attacks. All instances must be refactored to use parameterized queries."
+      },
+      "testCoverage": {
+        "file": "src/todo.ts",
+        "hasTests": false,
+        "testFiles": [],
+        "untestedPaths": [
+          {
+            "type": "function",
+            "location": "searchTodos",
+            "priority": "critical",
+            "reasoning": "SQL injection vulnerability through string concatenation with user input. No parameterized query used. Function is completely untested.",
+            "suggestedTest": "Test with malicious input like keyword = \"'; DROP TABLE todos; --\" to ensure proper escaping or use parameterized queries"
+          },
+          {
+            "type": "function",
+            "location": "searchTodosByStatus",
+            "priority": "critical",
+            "reasoning": "SQL injection vulnerability through direct concatenation of user input. No input validation or parameterized query. Function is completely untested.",
+            "suggestedTest": "Test with malicious input like completed = \"1 OR 1=1\" to verify input handling and implement parameterized queries"
+          },
+          {
+            "type": "function",
+            "location": "getTodosByUser",
+            "priority": "critical",
+            "reasoning": "SQL injection vulnerability through template literal string interpolation with unsanitized userId parameter. Function is completely untested.",
+            "suggestedTest": "Test with userId containing SQL injection payloads like \"123' OR '1'='1\" to ensure proper parameterization"
+          },
+          {
+            "type": "edge-case",
+            "location": "searchTodos - special characters",
+            "priority": "high",
+            "reasoning": "No tests for keywords containing SQL special characters, quotes, or escape sequences",
+            "suggestedTest": "Test searchTodos with keywords like \"test%\", \"test'\", \"test\\\" to verify proper escaping"
+          },
+          {
+            "type": "edge-case",
+            "location": "searchTodosByStatus - type validation",
+            "priority": "high",
+            "reasoning": "No validation that completed parameter is a valid boolean or integer value",
+            "suggestedTest": "Test with invalid inputs like \"abc\", \"\", NULL to verify error handling"
+          },
+          {
+            "type": "edge-case",
+            "location": "getTodosByUser - empty/null userId",
+            "priority": "high",
+            "reasoning": "No tests for edge cases like empty string, null, or undefined userId values",
+            "suggestedTest": "Test getTodosByUser with empty string and null values to verify proper handling"
+          }
+        ],
+        "coverageEstimate": 0,
+        "summary": "Three new functions introduced with critical SQL injection vulnerabilities. All functions lack any test coverage. Functions use unsafe string concatenation/template literals instead of parameterized queries, making them vulnerable to SQL injection attacks. Immediate remediation required: replace with parameterized queries and add comprehensive test coverage including malicious input validation."
+      },
+      "refactorings": {
+        "file": "src/todo.ts",
+        "suggestions": [
+          {
+            "type": "pattern-improvement",
+            "location": "searchTodos function (lines 119-124)",
+            "impact": "high",
+            "description": "Replace vulnerable SQL string interpolation with parameterized query to prevent SQL injection attacks",
+            "before": "const query = `SELECT * FROM todos WHERE title LIKE '%${keyword}%' OR description LIKE '%${keyword}%'`;\nconst rows = await db.query(query);",
+            "after": "const searchTerm = `%${keyword}%`;\nconst rows = await db.query('SELECT * FROM todos WHERE title LIKE ? OR description LIKE ?', [searchTerm, searchTerm]);",
+            "benefits": "Eliminates SQL injection vulnerability by using parameterized queries. Input values are safely escaped by the database driver, preventing malicious SQL code execution."
+          },
+          {
+            "type": "pattern-improvement",
+            "location": "searchTodosByStatus function (lines 130-135)",
+            "impact": "high",
+            "description": "Replace vulnerable string concatenation with parameterized query and convert status to boolean type",
+            "before": "const sql = \"SELECT * FROM todos WHERE completed = \" + completed;\nconst rows = await db.query(sql);",
+            "after": "const isCompleted = completed === 'true';\nconst rows = await db.query('SELECT * FROM todos WHERE completed = ?', [isCompleted]);",
+            "benefits": "Prevents SQL injection by using parameterized queries and type-safe boolean conversion instead of trusting string input. Also clarifies the boolean intent."
+          },
+          {
+            "type": "pattern-improvement",
+            "location": "getTodosByUser function (lines 141-145)",
+            "impact": "high",
+            "description": "Replace vulnerable template literal with parameterized query to prevent SQL injection",
+            "before": "const query = `SELECT t.* FROM todos t JOIN user_todos ut ON t.id = ut.todo_id WHERE ut.user_id = '${userId}'`;\nconst rows = await db.query(query);",
+            "after": "const query = 'SELECT t.* FROM todos t JOIN user_todos ut ON t.id = ut.todo_id WHERE ut.user_id = ?';\nconst rows = await db.query(query, [userId]);",
+            "benefits": "Uses parameterized queries to safely handle userId input. The database driver handles escaping, eliminating SQL injection risks entirely."
+          },
+          {
+            "type": "simplify",
+            "location": "searchTodos function (line 123)",
+            "impact": "low",
+            "description": "Use const for better practice instead of allowing potential reassignment of query variable",
+            "before": "const query = `SELECT * FROM todos...`;\nconst rows = await db.query(query);",
+            "after": "const rows = await db.query('SELECT * FROM todos WHERE title LIKE ? OR description LIKE ?', [searchTerm, searchTerm]);",
+            "benefits": "Reduces intermediate variable assignment and improves code clarity by combining query and execution."
+          }
+        ],
+        "summary": "The pull request introduces three new database query functions with critical SQL injection vulnerabilities. All three functions use unsafe string interpolation (template literals and concatenation) instead of parameterized queries. Following JavaScript/TypeScript security best practices, these should be refactored to use parameterized queries with bound parameters. This is a high-priority security fix that preserves all intended functionality while eliminating injection attack vectors. Additionally, searchTodosByStatus should validate and convert the input to boolean type rather than trusting the string value."
+      }
+    }
+  ],
+  "summary": {
+    "totalFiles": 1,
+    "overallScore": 15,
+    "criticalIssues": 3,
+    "highPriorityTests": 6,
+    "refactoringOpportunities": 4
+  },
+  "recommendations": [
+    {
+      "priority": "critical",
+      "category": "security",
+      "description": "SQL injection vulnerability in searchTodos function. User input 'keyword' is directly interpolated into SQL query using template literals without parameterization or escaping.",
+      "files": [
+        "src/todo.ts"
+      ]
+    },
+    {
+      "priority": "critical",
+      "category": "security",
+      "description": "SQL injection vulnerability in searchTodosByStatus function. User input 'completed' is concatenated directly into SQL query without validation or parameterization.",
+      "files": [
+        "src/todo.ts"
+      ]
+    },
+    {
+      "priority": "critical",
+      "category": "security",
+      "description": "SQL injection vulnerability in getTodosByUser function. User input 'userId' is directly interpolated into SQL query using template literals without parameterization or sanitization.",
+      "files": [
+        "src/todo.ts"
+      ]
+    },
+    {
+      "priority": "critical",
+      "category": "test coverage",
+      "description": "Test with malicious input like keyword = \"'; DROP TABLE todos; --\" to ensure proper escaping or use parameterized queries",
+      "files": [
+        "src/todo.ts"
+      ]
+    },
+    {
+      "priority": "critical",
+      "category": "test coverage",
+      "description": "Test with malicious input like completed = \"1 OR 1=1\" to verify input handling and implement parameterized queries",
+      "files": [
+        "src/todo.ts"
+      ]
+    },
+    {
+      "priority": "critical",
+      "category": "test coverage",
+      "description": "Test with userId containing SQL injection payloads like \"123' OR '1'='1\" to ensure proper parameterization",
+      "files": [
+        "src/todo.ts"
+      ]
+    },
+    {
+      "priority": "high",
+      "category": "test coverage",
+      "description": "Test searchTodos with keywords like \"test%\", \"test'\", \"test\\\" to verify proper escaping",
+      "files": [
+        "src/todo.ts"
+      ]
+    },
+    {
+      "priority": "high",
+      "category": "test coverage",
+      "description": "Test with invalid inputs like \"abc\", \"\", NULL to verify error handling",
+      "files": [
+        "src/todo.ts"
+      ]
+    },
+    {
+      "priority": "high",
+      "category": "test coverage",
+      "description": "Test getTodosByUser with empty string and null values to verify proper handling",
+      "files": [
+        "src/todo.ts"
+      ]
+    }
+  ],
+  "metadata": {
+    "analyzedAt": "2026-10-26T10:39:27.353Z",
+    "duration": 64712,
+    "agentVersions": {
+      "codeQuality": "claude-haiku-4-5-20251001",
+      "testCoverage": "claude-haiku-4-5-20251001",
+      "refactoring": "claude-haiku-4-5-20251001"
+    }
+  }
+}

@@ -1,0 +1,211 @@
+{
+  "pullRequest": {
+    "owner": "udacity",
+    "repo": "cd14715-simple-todo-app",
+    "number": 1
+  },
+  "fileReviews": [
+    {
+      "file": "fixtures/clean-code.ts",
+      "codeQuality": {
+        "file": "fixtures/clean-code.ts",
+        "issues": [
+          {
+            "line": 25,
+            "severity": "medium",
+            "category": "best-practice",
+            "description": "Email validation regex is overly simplistic and does not conform to RFC 5322. It will accept invalid emails like 'a@b.c' and reject valid emails with subdomains or special characters.",
+            "suggestion": "Use a more comprehensive email validation approach, such as a library like 'email-validator' or implement RFC 5322 compliant regex, or better yet, validate by sending a confirmation email."
+          },
+          {
+            "line": 72,
+            "severity": "medium",
+            "category": "security",
+            "description": "The ID generation using Date.now() and Math.random() is not cryptographically secure and may have collisions under concurrent load. This could lead to duplicate user IDs.",
+            "suggestion": "Use a secure random ID generator such as 'crypto.randomUUID()' or a library like 'uuid' or 'nanoid'."
+          },
+          {
+            "line": 45,
+            "severity": "low",
+            "category": "best-practice",
+            "description": "The email is converted to lowercase, but this is not documented in the JSDoc. Case normalization should be explicit in the API contract.",
+            "suggestion": "Add a note in the JSDoc comment explaining that emails are normalized to lowercase for consistency."
+          }
+        ],
+        "overallScore": 82,
+        "summary": "Clean code with good practices including input validation, sanitization, and parameterized queries. Three issues identified: email regex validation is too simplistic (medium), ID generation lacks cryptographic security (medium), and email normalization is undocumented (low). Overall code quality is good but has room for improvement in security and validation robustness."
+      },
+      "testCoverage": {
+        "file": "fixtures/clean-code.ts",
+        "hasTests": false,
+        "testFiles": [],
+        "untestedPaths": [
+          {
+            "type": "function",
+            "location": "isValidEmail()",
+            "priority": "high",
+            "reasoning": "Email validation function lacks test coverage for valid emails, invalid formats, edge cases (no @, multiple @, missing domain, etc.)",
+            "suggestedTest": "Test cases: valid email, missing @, missing domain, spaces in email, empty string"
+          },
+          {
+            "type": "function",
+            "location": "sanitizeInput()",
+            "priority": "high",
+            "reasoning": "Sanitization function has no tests verifying XSS prevention for HTML entities and special characters",
+            "suggestedTest": "Test cases: input with <, >, \", ', combined special characters, empty string"
+          },
+          {
+            "type": "function",
+            "location": "createUser()",
+            "priority": "critical",
+            "reasoning": "Main user creation function has multiple untested branches: missing email validation, missing name validation, invalid email format, successful creation",
+            "suggestedTest": "Test cases: valid input, missing email, missing name, invalid email format, sanitization applied, generated ID format, lowercase email conversion"
+          },
+          {
+            "type": "branch",
+            "location": "createUser() - email validation branch (line 46-48)",
+            "priority": "high",
+            "reasoning": "Error path when email or name is missing is not tested",
+            "suggestedTest": "Test that Error('Email and name are required') is thrown when email is missing or empty"
+          },
+          {
+            "type": "branch",
+            "location": "createUser() - email format validation branch (line 50-52)",
+            "priority": "high",
+            "reasoning": "Error path for invalid email format is not tested",
+            "suggestedTest": "Test that Error('Invalid email format') is thrown for malformed emails"
+          },
+          {
+            "type": "function",
+            "location": "generateId()",
+            "priority": "medium",
+            "reasoning": "ID generation function lacks tests verifying format, uniqueness, and consistency",
+            "suggestedTest": "Test that generated ID matches pattern 'user_<timestamp>_<random>' and is unique across calls"
+          },
+          {
+            "type": "function",
+            "location": "saveUser()",
+            "priority": "high",
+            "reasoning": "Database save function has no tests for successful save or error handling",
+            "suggestedTest": "Mock database query and test that saveUser calls db.query with correct parameters"
+          },
+          {
+            "type": "edge-case",
+            "location": "createUser() - email case handling (line 57)",
+            "priority": "medium",
+            "reasoning": "Email is converted to lowercase but no test verifies this transformation",
+            "suggestedTest": "Test that email with uppercase letters is stored as lowercase in created user"
+          },
+          {
+            "type": "edge-case",
+            "location": "sanitizeInput() - combined escaping",
+            "priority": "medium",
+            "reasoning": "No tests for inputs with multiple special characters or escape sequences",
+            "suggestedTest": "Test input containing multiple special characters: '<script>alert(\"xss\")</script>'"
+          }
+        ],
+        "coverageEstimate": 0,
+        "summary": "New fixture file with zero test coverage. Contains 6 exported/public functions with multiple untested branches and edge cases. Critical gaps include: createUser() validation branches, email sanitization verification, ID generation format validation, and database save operation testing. No test files provided or referenced."
+      },
+      "refactorings": {
+        "file": "fixtures/clean-code.ts",
+        "suggestions": [
+          {
+            "type": "modernize",
+            "location": "generateId function (line 71)",
+            "impact": "medium",
+            "description": "Replace timestamp-based ID generation with Web Crypto API for better uniqueness and security",
+            "before": "return `user_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;",
+            "after": "return `user_${crypto.randomUUID()}`;",
+            "benefits": "Produces cryptographically secure, guaranteed-unique IDs (UUIDs) that are collision-resistant, more reliable than timestamp + random concatenation, and follows modern standards"
+          },
+          {
+            "type": "simplify",
+            "location": "sanitizeInput function (line 33)",
+            "impact": "medium",
+            "description": "Consolidate multiple string replacements using a single regex or use a more maintainable approach",
+            "before": "return input\n    .replace(/</g, '&lt;')\n    .replace(/>/g, '&gt;')\n    .replace(/\"/g, '&quot;')\n    .replace(/'/g, '&#039;');",
+            "after": "const escapeMap: Record<string, string> = { '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#039;' };\n  return input.replace(/[<>\"']/g, (char) => escapeMap[char]);",
+            "benefits": "Reduces repeated .replace() calls, improves readability with explicit mapping, easier to maintain and extend escape rules"
+          },
+          {
+            "type": "pattern-improvement",
+            "location": "createUser function (line 46)",
+            "impact": "low",
+            "description": "Validate and normalize email before sanitizing to ensure consistent data handling",
+            "before": "if (!isValidEmail(input.email)) {\n    throw new Error('Invalid email format');\n  }\n\n  // Sanitize input\n  const sanitizedName = sanitizeInput(input.name);",
+            "after": "if (!isValidEmail(input.email)) {\n    throw new Error('Invalid email format');\n  }\n\n  // Normalize and sanitize input\n  const sanitizedName = sanitizeInput(input.name);\n  const normalizedEmail = input.email.trim().toLowerCase();",
+            "benefits": "Ensures email is trimmed before normalization, prevents whitespace issues, provides defense-in-depth input handling"
+          }
+        ],
+        "summary": "This fixture file demonstrates clean code practices with proper validation, sanitization, and security measures. Minor refactoring opportunities exist around modernizing async patterns and improving ID generation robustness. The code is well-commented and follows TypeScript best practices overall."
+      }
+    }
+  ],
+  "summary": {
+    "totalFiles": 1,
+    "overallScore": 82,
+    "criticalIssues": 0,
+    "highPriorityTests": 6,
+    "refactoringOpportunities": 3
+  },
+  "recommendations": [
+    {
+      "priority": "high",
+      "category": "test coverage",
+      "description": "Test cases: valid email, missing @, missing domain, spaces in email, empty string",
+      "files": [
+        "fixtures/clean-code.ts"
+      ]
+    },
+    {
+      "priority": "high",
+      "category": "test coverage",
+      "description": "Test cases: input with <, >, \", ', combined special characters, empty string",
+      "files": [
+        "fixtures/clean-code.ts"
+      ]
+    },
+    {
+      "priority": "critical",
+      "category": "test coverage",
+      "description": "Test cases: valid input, missing email, missing name, invalid email format, sanitization applied, generated ID format, lowercase email conversion",
+      "files": [
+        "fixtures/clean-code.ts"
+      ]
+    },
+    {
+      "priority": "high",
+      "category": "test coverage",
+      "description": "Test that Error('Email and name are required') is thrown when email is missing or empty",
+      "files": [
+        "fixtures/clean-code.ts"
+      ]
+    },
+    {
+      "priority": "high",
+      "category": "test coverage",
+      "description": "Test that Error('Invalid email format') is thrown for malformed emails",
+      "files": [
+        "fixtures/clean-code.ts"
+      ]
+    },
+    {
+      "priority": "high",
+      "category": "test coverage",
+      "description": "Mock database query and test that saveUser calls db.query with correct parameters",
+      "files": [
+        "fixtures/clean-code.ts"
+      ]
+    }
+  ],
+  "metadata": {
+    "analyzedAt": "2026-10-26T10:37:07.523Z",
+    "duration": 70384,
+    "agentVersions": {
+      "codeQuality": "claude-haiku-4-5-20251001",
+      "testCoverage": "claude-haiku-4-5-20251001",
+      "refactoring": "claude-haiku-4-5-20251001"
+    }
+  }
+}

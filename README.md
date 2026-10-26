@@ -1,69 +1,125 @@
-# Solve Sudoku with AI
+# Claude Skills
 
-## Synopsis
+This directory contains Claude Skills - reusable domain expertise that agents can invoke.
 
-In this project, you will extend the Sudoku-solving agent developed in the classroom lectures to solve _diagonal_ Sudoku puzzles and implement a new constraint strategy called "naked twins". A diagonal Sudoku puzzle is identical to traditional Sudoku puzzles with the added constraint that the boxes on the two main diagonals of the board must also contain the digits 1-9 in each cell (just like the rows, columns, and 3x3 blocks). The naked twins strategy says that if you have two or more unallocated boxes in a unit and there are only two digits that can go in those two boxes, then those two digits can be eliminated from the possible assignments of all other boxes in the same unit.
+## What Are Skills?
 
+Skills are markdown files that provide Claude with specialized knowledge for specific tasks. They're loaded automatically by the Claude Agent SDK when agents invoke them.
 
-## Quickstart Guide
+## Provided Example
 
-**YOU ONLY NEED TO WRITE CODE IN `solution.py`.**
+- **javascript-best-practices/** - Complete example skill for JavaScript code review
+  - Review this to understand the skill format
+  - See how it provides best practices, common pitfalls, and output format
 
-1. Follow the instructions in the classroom lesson to install and configure the `aind` [Anaconda](https://www.continuum.io/downloads) environment which includes several important packages that are used for the project. OS X or Unix/Linux users can activate the aind environment by running the following (Windows users simply run `activate aind`):
-    
-    `$ source activate aind`
+## Your Task
 
-2. You can run a small set of test cases using the local test suite. 
+Create **3 additional skills** (minimum 2 required):
 
-    `(aind)$ python -m unittest -v`
+### Required Skills
 
-3. Copy your code from the classroom for the search and basic strategies, then add the diagonal units at the top of the solutions.py file and complete the `naked_twins()` function.  Pseudocode for the `naked_twins()` function is available [here](https://github.com/udacity/artificial-intelligence/blob/master/Projects/1_Sudoku/pseudocode.md).
+1. **typescript-patterns/** - TypeScript-specific analysis
+   - Type safety best practices
+   - Advanced TypeScript patterns
+   - Common type issues
 
-4. Run the test suite again to check your progress. Once you pass all the test cases in the local test suite, you can submit the project to run more comprehensive tests with the remote test suite:
+2. **security-analysis/** - Security-focused code review
+   - OWASP Top 10 vulnerabilities
+   - Secure coding practices
+   - Common security mistakes
 
-    `(aind)$ udacity submit`
+### Optional Skills (Choose 1+)
 
-5. You can run the code with visualization (see the last section of the readme for more information)
+3. **python-code-review/** - Python idioms and patterns
+4. **performance-optimization/** - Performance analysis
+5. **accessibility/** - Web accessibility (for frontend code)
+6. **Your custom skill** - Any domain expertise you want to add
 
-    `(aind)$ python solution.py`
+## Skill File Structure
 
+Each skill must be in its own folder with a `SKILL.md` file:
 
-### Notes
-
-- You will not receive credit for the project until you submit the zip file created by `udacity submit` in your classroom.
-
-- You must submit _exactly_ the zip file created by the CLI in step 3 to the classroom; if you make any changes to the file, you'll receive an error message when you attempt to submit in the classroom.
-
-
-## Instructions
-
-You must complete the required functions in the 'solution.py' file (copy in code from the classroom where indicated, and add or extend with new code as described below). There are no provided unit tests for this project. You are responsible for writing and running your own tests to ensure your solution is correct before submission. The `test_solution.py` file includes a few unit tests for local testing.
-
-YOU SHOULD EXPECT TO MODIFY OR WRITE YOUR OWN UNIT TESTS AS PART OF COMPLETING THIS PROJECT. 
-
-1. Add the two new diagonal units to the `unitlist` at the top of solution.py. Re-run the local tests with `python -m unittest` to confirm your solution. 
-
-1. Copy your code from the classroom for the `eliminate()`, `only_choice()`, `reduce_puzzle()`, and `search()` into the corresponding functions in the `solution.py` file.
-
-1. Implement the `naked_twins()` function (see the pseudocode [here](https://github.com/udacity/artificial-intelligence/blob/master/Projects/1_Sudoku/pseudocode.md) for help), and update `reduce_puzzle()` to call it (along with the other existing strategies). Re-run the local tests with `python -m unittest -v` to confirm your solution.
-
-1. Run the remote tests with `udacity submit` to confirm your solution. If any of the remote test cases fail, use the feedback to write your own local test cases for debugging.
-
-
-## Submission
-
-After completing your project implementation, package your work into a ZIP archive. Run the command below from the project’s `workspace/` directory to generate the archive, then download and upload the resulting ZIP file for submission:
-
-```bash
-zip -r archive.zip . -x archive.zip
 ```
-Ensure there are no garbage or irrelevant files in the zip archive. 
+.claude/skills/
+├── javascript-best-practices/
+│   └── SKILL.md               ✅ Provided example
+├── typescript-patterns/
+│   └── SKILL.md               TODO: Create
+├── security-analysis/
+│   └── SKILL.md               TODO: Create
+└── python-code-review/
+    └── SKILL.md               TODO: Create
+```
 
+## SKILL.md Format
 
-This project does not include any provided unit tests or test suites. Before submitting your code, thoroughly test your solution using your own test cases to ensure it works as expected. We strongly recommend that you write and run your own tests to verify your solution works correctly for a variety of puzzles and edge cases.
+```markdown
+---
+description: Brief description of what this skill provides
+---
 
-## Visualization
+# Skill Name
 
-**Note:** The `pygame` library is required to visualize your solution -- however, the `pygame` module can be troublesome to install and configure. It should be installed by default with the AIND conda environment, but it is not reliable across all operating systems or versions. Please refer to the pygame documentation [here](http://www.pygame.org/download.shtml), or discuss among your peers in the slack group if you need help.
+Brief introduction
 
-Running `python solution.py` will automatically attempt to visualize your solution, but you mustuse the provided `assign_value` function (defined in `utils.py`) to track the puzzle solution progress for reconstruction during visuzalization.
+## Section 1: Topic Area
+
+Content, guidelines, examples
+
+## Section 2: Another Topic
+
+More content
+
+## Output:
+
+What format/guidance the skill should return
+```
+
+## How Agents Invoke Skills
+
+In your agent prompts, use:
+
+```
+For .ts files: invoke Skill "typescript-patterns"
+```
+
+The Claude Agent SDK will:
+1. Load the SKILL.md file
+2. Inject its content into the agent's context
+3. Agent uses the knowledge to provide expert analysis
+
+## Tips for Writing Skills
+
+✅ **DO:**
+- Be specific and actionable
+- Include code examples
+- Organize by category
+- Provide severity guidelines
+- Show good vs bad patterns
+
+❌ **DON'T:**
+- Make it too long (keep under 500 lines)
+- Include full tutorials (just key points)
+- Duplicate general knowledge Claude already has
+- Use generic advice (be domain-specific)
+
+## Example: Invoking a Skill
+
+In `code-quality-analyzer` prompt:
+
+```typescript
+## Process:
+1. Read the code file with Read tool
+2. Invoke Skills based on file type:
+   - .ts/.tsx files: invoke Skill "typescript-patterns"
+   - .js/.jsx files: invoke Skill "javascript-best-practices"
+   - .py files: invoke Skill "python-code-review"
+   - ALL files: invoke Skill "security-analysis"
+3. Analyze using the skill's guidance
+4. Return structured feedback
+```
+
+## Resources
+
+- [Claude Agent SDK Skills Documentation](https://platform.claude.com/docs/en/agent-sdk/skills)
+- Example: See `javascript-best-practices/SKILL.md` in this directory
